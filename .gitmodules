@@ -1,0 +1,9 @@
+[submodule "godot-cpp"]
+	path = godot-cpp
+	url = https://github.com/Faless/godot-cpp.git
+[submodule "deps/libavif"]
+	path = deps/libavif
+	url = https://github.com/AOMediaCodec/libavif.git
+[submodule "deps/aom"]
+	path = deps/aom
+	url = https://aomedia.googlesource.com/aom

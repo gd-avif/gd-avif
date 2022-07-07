@@ -1,0 +1,212 @@
+name: 🔧 Build -> Package 📦
+on: [push, pull_request]
+
+env:
+  # Only used for the cache key. Increment version to force clean build.
+  GODOT_BASE_BRANCH: master
+
+concurrency:
+  group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: 📊 Static Checks (clang-format, black format, file format)
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          # Add clang repository (so we have clang-format-13)
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main"
+          sudo apt-get update
+          # Install required deps
+          sudo apt-get install -qq dos2unix recode clang-format-13
+          sudo update-alternatives --remove-all clang-format
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-13 100
+          sudo pip3 install black==22.3.0 pygments
+
+      - name: File formatting checks (file_format.sh)
+        run: |
+          bash ./misc/scripts/file_format.sh
+
+      - name: Style checks via clang-format (clang_format.sh)
+        run: |
+          bash ./misc/scripts/clang_format.sh
+
+      - name: Python style checks via black (black_format.sh)
+        run: |
+          bash ./misc/scripts/black_format.sh
+
+  build:
+    runs-on: ${{ matrix.os }}
+    name: 🔧 Build
+    needs: static-checks
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Android
+          - platform: android
+            arch: 'x86_64'
+            sconsflags: 'ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME'
+            os: 'ubuntu-20.04'
+          - platform: android
+            arch: 'arm64'
+            sconsflags: 'ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME'
+            os: 'ubuntu-20.04'
+
+          # iOS
+          - platform: ios
+            arch: 'arm64'
+            sconsflags: ''
+            os: 'macos-11'
+
+          # Linux
+          - platform: linux
+            arch: 'x86_32'
+            sconsflags: ''
+            os: 'ubuntu-20.04'
+          - platform: linux
+            arch: 'x86_64'
+            sconsflags: ''
+            os: 'ubuntu-20.04'
+
+          # macOS
+          - platform: macos
+            arch: 'x86_64'
+            sconsflags: ''
+            os: 'macos-11'
+          - platform: macos
+            arch: 'arm64'
+            sconsflags: ''
+            os: 'macos-11'
+
+          # Windows
+          - platform: windows
+            arch: 'x86_32'
+            sconsflags: 'use_mingw=yes'
+            os: 'ubuntu-20.04'
+            msvc_arch: amd64_x86
+          - platform: windows
+            arch: 'x86_64'
+            sconsflags: 'use_mingw=yes'
+            os: 'ubuntu-20.04'
+            msvc_arch: amd64
+
+    env:
+      SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
+      SCONSFLAGS: platform=${{ matrix.platform }} arch=${{ matrix.arch }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Godot build cache
+        uses: ./godot-cpp/.github/actions/godot-cache
+        with:
+          cache-name: ${{ matrix.platform }}-${{ matrix.arch }}
+        continue-on-error: true
+
+      - name: Install Windows build dependencies
+        if: ${{ matrix.platform == 'windows' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential mingw-w64 yasm
+          sudo update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix
+          sudo update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+          dpkg -l | grep ii | grep mingw
+          update-alternatives --get-selections | grep mingw
+
+      - name: Install Linux build dependencies
+        if: ${{ matrix.platform == 'linux' }}
+        run: |
+          sudo apt-get install build-essential gcc-multilib g++-multilib yasm
+
+      - name: Install Android build dependencies
+        if: ${{ matrix.platform == 'android' }}
+        run: |
+          sudo apt-get install yasm
+
+      - name: Install macOS/iOS build dependencies
+        if: ${{ matrix.platform == 'macos' || matrix.platform == 'ios' }}
+        run: |
+          brew install yasm
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+
+      - name: Configuring Python packages
+        run: |
+          python -c "import sys; print(sys.version)"
+          python -m pip install scons
+          python --version
+          scons --version
+          cmake --version
+
+      - name: Compile Extension - template_debug - ${{ matrix.platform }} - ${{ matrix.arch }}
+        run: |
+          scons target=template_debug ${{ matrix.sconsflags }}
+
+      - name: Compile Extension - template_release - ${{ matrix.platform }} - ${{ matrix.arch }}
+        run: |
+          scons target=template_release ${{ matrix.sconsflags }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.job }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: bin/*
+
+  package:
+    name: 📦 Package
+    needs: build
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Bundle licenses.
+        run: |
+          cp LICENSE artifacts/LICENSE.webrtc-native
+          cp deps/aom/LICENSE artifacts/LICENSE.aom
+          cp deps/libavif/LICENSE artifacts/LICENSE.libavif
+
+      - name: Package artifacts for release
+        run: |
+          mkdir release
+          cd release
+
+          ls -R
+
+          name="gdavif"
+          destdir="${name}"
+          mkdir -p ${destdir}/lib
+          find ../artifacts -wholename "*/${destdir}/lib/*" | xargs cp -t ${destdir}/lib/
+          find ../artifacts -wholename "*/${destdir}/${name}.gdextension" | head -n 1 | xargs cp -t ${destdir}/
+          find ../artifacts -wholename "*/LICENSE*" | xargs cp -t ${destdir}/
+          zip -r ${name}.zip ${destdir}
+
+          ls -R
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: godot-avif-extension
+          path: release/*.zip
