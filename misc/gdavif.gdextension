@@ -1,0 +1,29 @@
+[configuration]
+
+entry_symbol = "avif_extension_init"
+
+[libraries]
+
+linux.debug.x86_64 = "res://gdavif/lib/libgdavif.linux.template_debug.x86_64.so"
+linux.debug.x86_32 = "res://gdavif/lib/libgdavif.linux.template_debug.x86_32.so"
+macos.debug = "res://gdavif/lib/libgdavif.macos.template_debug.universal.dylib"
+windows.debug.x86_64 = "res://gdavif/lib/libgdavif.windows.template_debug.x86_64.dll"
+windows.debug.x86_32 = "res://gdavif/lib/libgdavif.windows.template_debug.x86_32.dll"
+android.debug.arm64 = "res://gdavif/lib/libgdavif.android.template_debug.arm64.so"
+android.debug.arm32 = "res://gdavif/lib/libgdavif.android.template_debug.arm32.so"
+android.debug.x86_64 = "res://gdavif/lib/libgdavif.android.template_debug.x86_64.so"
+android.debug.x86_32 = "res://gdavif/lib/libgdavif.android.template_debug.x86_32.so"
+ios.debug.arm64 = "res://gdavif/lib/libgdavif.ios.template_debug.arm64.dylib"
+ios.debug.x86_64 = "res://gdavif/lib/libgdavif.ios.template_debug.x86_64.simulator.dylib"
+
+linux.release.x86_64 = "res://gdavif/lib/libgdavif.linux.template_release.x86_64.so"
+linux.release.x86_32 = "res://gdavif/lib/libgdavif.linux.template_release.x86_32.so"
+macos.release = "res://gdavif/lib/libgdavif.macos.template_release.universal.dylib"
+windows.release.x86_64 = "res://gdavif/lib/libgdavif.windows.template_release.x86_64.dll"
+windows.release.x86_32 = "res://gdavif/lib/libgdavif.windows.template_release.x86_32.dll"
+android.release.arm64 = "res://gdavif/lib/libgdavif.android.template_release.arm64.so"
+android.release.arm32 = "res://gdavif/lib/libgdavif.android.template_release.arm32.so"
+android.release.x86_64 = "res://gdavif/lib/libgdavif.android.template_release.x86_64.so"
+android.release.x86_32 = "res://gdavif/lib/libgdavif.android.template_release.x86_32.so"
+ios.release.arm64 = "res://gdavif/lib/libgdavif.ios.template_release.arm64.dylib"
+ios.release.x86_64 = "res://gdavif/lib/libgdavif.ios.template_release.x86_64.simulator.dylib"
