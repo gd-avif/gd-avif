@@ -11,8 +11,14 @@ def add_sources(sources, dirpath, extension):
             sources.append(dirpath + "/" + f)
 
 
-ARGUMENTS["ios_min_version"] = "11.0"
-ARGUMENTS["macos_deployment_target"] = "10.9"
+# Minimum target platform versions.
+if "ios_min_version" not in ARGUMENTS:
+    ARGUMENTS["ios_min_version"] = "11.0"
+if "macos_deployment_target" not in ARGUMENTS:
+    ARGUMENTS["macos_deployment_target"] = "10.9"
+if "android_api_level" not in ARGUMENTS:
+    ARGUMENTS["android_api_level"] = "21"
+
 env = SConscript("godot-cpp/SConstruct").Clone()
 
 opts = Variables([], ARGUMENTS)
