@@ -64,7 +64,7 @@ Error ImageLoaderAVIF::avif_load_image_from_buffer(Image *p_image, const uint8_t
 	result = avifImageYUVToRGB(p_decoder->image, &rgb);
 	ERR_FAIL_COND_V_MSG(result != AVIF_RESULT_OK, FAILED, avifResultToString(result));
 
-	p_image->create_from_data(width, height, false, Image::FORMAT_RGBA8, data);
+	p_image->set_data(width, height, false, Image::FORMAT_RGBA8, data);
 	return OK;
 }
 
