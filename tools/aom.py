@@ -45,19 +45,19 @@ def generate(env):
     libs = []
     if env["arch"] == "x86_64":
         libs += [
-            "libaom_dsp_common_ssse3.a",
-            "libaom_av1_encoder_ssse3.a",
-            "libaom_dsp_encoder_ssse3.a",
-            "libaom_dsp_common_sse2.a",
-            "libaom_av1_encoder_sse2.a",
-            "libaom_dsp_encoder_sse2.a",
+            "libaom_av1_encoder_sse2_static.a",
+            "libaom_av1_encoder_ssse3_static.a",
+            "libaom_dsp_common_sse2_static.a",
+            "libaom_dsp_common_ssse3_static.a",
+            "libaom_dsp_encoder_sse2_static.a",
+            "libaom_dsp_encoder_ssse3_static.a",
         ]
     elif env["arch"] == "x86_32":
         libs += [
-            "libaom_dsp_common_ssse3.a",
-            "libaom_dsp_common_sse2.a",
-            "libaom_av1_encoder_sse2.a",
-            "libaom_dsp_encoder_sse2.a",
+            "libaom_av1_encoder_sse2_static.a",
+            "libaom_dsp_common_sse2_static.a",
+            "libaom_dsp_common_ssse3_static.a",
+            "libaom_dsp_encoder_sse2_static.a",
         ]
     libs = ["libaom_version.a", "libaom_pc.a"] + libs + ["libaom.a"]
 
