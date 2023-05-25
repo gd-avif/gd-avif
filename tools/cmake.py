@@ -26,7 +26,6 @@ def cmake_configure(env, source, target, opt_args):
 
 def cmake_build(env, source, target=""):
     jobs = env.GetOption("num_jobs")
-    env = env.Clone()
     return env.Execute("cmake --build %s %s -j%s" % (source, "-t %s" % target if target else "", jobs))
 
 
@@ -40,7 +39,7 @@ def cmake_platform_flags(env, config=None):
         config["CMAKE_CXX_COMPILER"] = env["CXX"]
 
     if env["platform"] == "android":
-        api = env["android_api_level"] if int(env["android_api_level"]) > 28 else "28"
+        api = env["android_api_level"]
         abi = {
             "arm64": "arm64-v8a",
             "arm32": "armeabi-v7a",
