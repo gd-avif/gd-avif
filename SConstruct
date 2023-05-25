@@ -22,7 +22,6 @@ if "android_api_level" not in ARGUMENTS:
 env = SConscript("godot-cpp/SConstruct").Clone()
 
 opts = Variables([], ARGUMENTS)
-opts.Add(BoolVariable("debug_dependencies", "Build dependencies respecting godot-cpp debug options", False))
 opts.Update(env)
 
 result_path = os.path.join("bin", "gdavif")
