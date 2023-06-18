@@ -68,6 +68,11 @@ Error ImageLoaderAVIF::avif_load_image_from_buffer(Image *p_image, const uint8_t
 	return OK;
 }
 
+Ref<Image> ImageLoaderAVIF::load_avif_from_buffer(PackedByteArray p_buffer) {
+	ERR_FAIL_COND_V(_avif_mem_loader_func == NULL, Ref<Image>());
+	return _avif_mem_loader_func(p_buffer.ptr(), p_buffer.size());
+}
+
 Error ImageLoaderAVIF::_load_image(const Ref<Image> &p_image, const Ref<FileAccess> &p_file, BitField<ImageFormatLoader::LoaderFlags> p_flags, double p_scale) {
 	ERR_FAIL_COND_V(p_file.is_null() || !p_file->is_open(), ERR_INVALID_PARAMETER);
 
@@ -97,6 +102,10 @@ Ref<Image> ImageLoaderAVIF::_avif_mem_loader_func(const uint8_t *p_buffer, int p
 	ERR_FAIL_COND_V(err, Ref<Image>());
 	avifDecoderDestroy(decoder);
 	return img;
+}
+
+void ImageLoaderAVIF::_bind_methods() {
+	ClassDB::bind_static_method("ImageLoaderAVIF", D_METHOD("load_avif_from_buffer", "avif_data"), &ImageLoaderAVIF::load_avif_from_buffer);
 }
 
 ImageLoaderAVIF::ImageLoaderAVIF() {

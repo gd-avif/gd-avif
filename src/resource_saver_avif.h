@@ -65,9 +65,12 @@ public:
 	virtual bool _recognize(const godot::Ref<godot::Resource> &p_resource) const override;
 	virtual godot::PackedStringArray _get_recognized_extensions(const godot::Ref<godot::Resource> &p_resource) const override;
 
-	static godot::Error save_image(godot::Ref<godot::Image> p_image, const godot::String &p_path, const godot::Dictionary &p_options = godot::Dictionary(), PixelFormat p_format = AVIF_PIXEL_DEFAULT);
-	static godot::PackedByteArray encode_image(godot::Ref<godot::Image> p_image, const godot::Dictionary &p_options = godot::Dictionary(), PixelFormat p_format = AVIF_PIXEL_DEFAULT);
-	static void set_defaults(const godot::Dictionary &p_options, PixelFormat p_format);
+	static godot::Error save_avif(godot::Ref<godot::Image> p_image, const godot::String &p_path, const godot::Dictionary &p_options = godot::Dictionary(), PixelFormat p_format = AVIF_PIXEL_YUV422);
+	static godot::PackedByteArray save_avif_to_buffer(godot::Ref<godot::Image> p_image, const godot::Dictionary &p_options = godot::Dictionary(), PixelFormat p_format = AVIF_PIXEL_YUV422);
+	static void set_avif_options_and_format(const godot::Dictionary &p_options = {}, PixelFormat p_format = AVIF_PIXEL_YUV422);
+	static void reset_avif_options_and_format();
+	static godot::Dictionary get_avif_encoder_options();
+	static PixelFormat get_avif_pixel_format();
 
 	ResourceSaverAVIF();
 	~ResourceSaverAVIF() { singleton = nullptr; }

@@ -38,7 +38,7 @@ class ImageLoaderAVIF : public godot::ImageFormatLoaderExtension {
 	GDCLASS(ImageLoaderAVIF, godot::ImageFormatLoaderExtension);
 
 protected:
-	static void _bind_methods() {}
+	static void _bind_methods();
 
 	static godot::Error avif_load_image_from_buffer(godot::Image *p_image, const uint8_t *p_buffer, int p_buffer_len, avifDecoder *p_decoder);
 	static godot::Ref<godot::Image> _avif_mem_loader_func(const uint8_t *p_buffer, int p_size);
@@ -46,6 +46,9 @@ protected:
 public:
 	virtual godot::Error _load_image(const godot::Ref<godot::Image> &p_image, const godot::Ref<godot::FileAccess> &p_file, godot::BitField<godot::ImageFormatLoader::LoaderFlags> p_flags, double p_scale) override;
 	virtual godot::PackedStringArray _get_recognized_extensions() const override;
+
+	static godot::Ref<godot::Image> load_avif_from_buffer(godot::PackedByteArray p_buffer);
+
 	ImageLoaderAVIF();
 };
 

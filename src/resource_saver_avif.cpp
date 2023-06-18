@@ -180,28 +180,59 @@ PackedStringArray ResourceSaverAVIF::_get_recognized_extensions(const Ref<Resour
 	return psa;
 }
 
-Error ResourceSaverAVIF::save_image(Ref<Image> p_image, const String &p_path, const Dictionary &p_options, PixelFormat p_format) {
+Error ResourceSaverAVIF::save_avif(Ref<Image> p_image, const String &p_path, const Dictionary &p_options, PixelFormat p_format) {
 	ERR_FAIL_COND_V(!singleton, ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(p_image.is_null(), ERR_INVALID_PARAMETER);
 	return singleton->_avif_save_image_func(p_path, p_image, p_options, p_format);
 }
 
-PackedByteArray ResourceSaverAVIF::encode_image(Ref<Image> p_image, const Dictionary &p_options, PixelFormat p_format) {
+PackedByteArray ResourceSaverAVIF::save_avif_to_buffer(Ref<Image> p_image, const Dictionary &p_options, PixelFormat p_format) {
 	ERR_FAIL_COND_V(!singleton, PackedByteArray());
 	return singleton->_avif_save_buffer_func(p_image, p_options, p_format);
 }
 
-void ResourceSaverAVIF::set_defaults(const Dictionary &p_options, PixelFormat p_format) {
+void ResourceSaverAVIF::set_avif_options_and_format(const Dictionary &p_options, PixelFormat p_format) { // Defaults are {}; singleton->pixel_format.
 	ERR_FAIL_COND(!singleton);
 	ERR_FAIL_COND(p_format <= AVIF_PIXEL_DEFAULT || p_format > AVIF_PIXEL_YUV400);
-	singleton->encoder_options = p_options;
+	Array keys = p_options.keys();
+	for (int i = 0; i < keys.size(); i++) {
+		ERR_FAIL_COND_MSG(!singleton->encoder_options.has(keys[i]), "Encoder option " + String(keys[i]) + " is invalid.");
+		singleton->encoder_options[keys[i]] = p_options[keys[i]];
+	}
 	singleton->pixel_format = p_format;
 }
 
+Dictionary ResourceSaverAVIF::get_avif_encoder_options() {
+	return singleton->encoder_options.duplicate();
+}
+
+ResourceSaverAVIF::PixelFormat ResourceSaverAVIF::get_avif_pixel_format() {
+	return singleton->pixel_format;
+}
+
+void ResourceSaverAVIF::reset_avif_options_and_format() {
+	Dictionary default_encoder_options;
+	default_encoder_options["maxThreads"] = 8;
+	default_encoder_options["minQuantizer"] = 20;
+	default_encoder_options["maxQuantizer"] = 30;
+	default_encoder_options["minQuantizerAlpha"] = 20;
+	default_encoder_options["maxQuantizerAlpha"] = 30;
+	default_encoder_options["tileRowsLog2"] = 0;
+	default_encoder_options["tileColsLog2"] = 0;
+	default_encoder_options["speed"] = 8;
+	default_encoder_options["keyframeInterval"] = 0;
+	default_encoder_options["timescale"] = 30;
+	singleton->encoder_options = default_encoder_options;
+	singleton->pixel_format = AVIF_PIXEL_YUV422;
+}
+
 void ResourceSaverAVIF::_bind_methods() {
-	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("set_defaults", "options", "format"), &ResourceSaverAVIF::set_defaults);
-	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("save_image", "image", "path", "options", "format"), &ResourceSaverAVIF::save_image, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_DEFAULT));
-	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("encode_image", "image", "options", "format"), &ResourceSaverAVIF::encode_image, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_DEFAULT));
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("set_avif_options_and_format", "options", "format"), &ResourceSaverAVIF::set_avif_options_and_format, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("reset_avif_options_and_format"), &ResourceSaverAVIF::reset_avif_options_and_format);
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("get_avif_encoder_options"), &ResourceSaverAVIF::get_avif_encoder_options);
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("get_avif_pixel_format"), &ResourceSaverAVIF::get_avif_pixel_format);
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("save_avif", "image", "path", "options", "format"), &ResourceSaverAVIF::save_avif, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("save_avif_to_buffer", "image", "options", "format"), &ResourceSaverAVIF::save_avif_to_buffer, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
 
 	BIND_ENUM_CONSTANT(AVIF_PIXEL_DEFAULT);
 	BIND_ENUM_CONSTANT(AVIF_PIXEL_YUV444);
@@ -214,14 +245,5 @@ ResourceSaverAVIF::ResourceSaverAVIF() {
 	if (singleton == nullptr) {
 		singleton = this;
 	}
-	encoder_options["maxThreads"] = 8;
-	encoder_options["minQuantizer"] = 20;
-	encoder_options["maxQuantizer"] = 30;
-	encoder_options["minQuantizerAlpha"] = 20;
-	encoder_options["maxQuantizerAlpha"] = 30;
-	encoder_options["tileRowsLog2"] = 0;
-	encoder_options["tileColsLog2"] = 0;
-	encoder_options["speed"] = 8;
-	encoder_options["keyframeInterval"] = 0;
-	encoder_options["timescale"] = 30;
+	ResourceSaverAVIF::reset_avif_options_and_format();
 }
