@@ -51,13 +51,11 @@ if mac_universal:
 
 for benv in build_envs:
     # Dependencies
-    for tool in ["cmake", "common", "aom", "avif"]:
+    for tool in ["cmake", "aom", "avif"]:
         benv.Tool(tool, toolpath=["tools"])
 
     aom = benv.BuildAOM()
-    avif = benv.BuildLibAvif()
-
-    benv.Depends(sources, [aom, avif])
+    avif = benv.BuildLibAvif(aom)
 
     # Make the shared library
     result_name = "gdavif{}{}".format(benv["suffix"], benv["SHLIBSUFFIX"])

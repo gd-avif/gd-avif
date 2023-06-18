@@ -10,26 +10,19 @@ def avif_cmake_config(env):
         "CMAKE_POSITION_INDEPENDENT_CODE": "1",
         "CMAKE_BUILD_TYPE": "%s" % ("RelWithDebInfo" if env["debug_symbols"] else "Release"),
     }
-    return env.CMakePlatformFlags(config)
+    return config
 
 
-def avif_emitter(target, source, env):
-    env.Depends(env["AVIF_LIBS"], env["AOM_LIBS"])
-    env.Depends(
-        env["AVIF_LIBS"],
-        [env.File(__file__), env.Dir(env["AVIF_SOURCE"]), env.File(env["AVIF_SOURCE"] + "/CMakeLists.txt")],
+def build_library(env, aom):
+    avif = env.CMake(
+        [env.Dir(env["AVIF_BUILD"])] + env["AVIF_LIBS"],
+        [env.Dir(env["AVIF_SOURCE"])] + aom,
+        CMAKECONFFLAGS=["-D%s=%s" % it for it in avif_cmake_config(env).items()],
     )
-    return env["AVIF_LIBS"], env.Dir(env["AVIF_SOURCE"])
-
-
-def avif_action(target, source, env):
-    avif_env = env.Clone()
-    build_dir = env["AVIF_BUILD"]
-    source_dir = env["AVIF_SOURCE"]
-    opts = avif_cmake_config(avif_env)
-    avif_env.CMakeConfigure(source_dir, build_dir, ["-D%s=%s" % it for it in opts.items()])
-    avif_env.CMakeBuild(build_dir)
-    return None
+    env.Append(LIBPATH=[env["AVIF_BUILD"]])
+    env.Append(CPPPATH=[env["AVIF_INCLUDE"]])
+    env.Prepend(LIBS=env["AVIF_LIBS"])
+    return avif
 
 
 def exists(env):
@@ -37,16 +30,8 @@ def exists(env):
 
 
 def generate(env):
-    env["AVIF_SOURCE"] = env["DEPS_SOURCE"] + "/libavif"
-    env["AVIF_BUILD"] = env["DEPS_BUILD"] + "/libavif"
-    env["AVIF_INCLUDE"] = env["AVIF_SOURCE"] + "/include"
-    env["AVIF_LIBS"] = [
-        env.File(env["AVIF_BUILD"] + "/" + lib)
-        for lib in [
-            "libavif.a",
-        ]
-    ]
-    env.Append(BUILDERS={"BuildLibAvif": env.Builder(action=avif_action, emitter=avif_emitter)})
-    env.Append(LIBPATH=[env["AVIF_BUILD"]])
-    env.Append(CPPPATH=[env["AVIF_INCLUDE"]])
-    env.Prepend(LIBS=env["AVIF_LIBS"])
+    env["AVIF_BUILD"] = env.Dir("#bin/thirdparty/libavif/${platform}/${arch}").abspath
+    env["AVIF_SOURCE"] = env.Dir("#thirdparty/libavif").abspath
+    env["AVIF_INCLUDE"] = env.Dir("${AVIF_SOURCE}/include").abspath
+    env["AVIF_LIBS"] = [env.File("${AVIF_BUILD}/libavif.a")]
+    env.AddMethod(build_library, "BuildLibAvif")

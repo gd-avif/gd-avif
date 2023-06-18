@@ -1,37 +1,15 @@
-import os
+import os, sys
+
+import SCons.Util
+import SCons.Builder
+import SCons.Action
 
 
-def exists(env):
-    return True
+def cmake_default_flags(env):
+    if env.get("cmake_default_flags", ""):
+        return SCons.Util.CLVar(env["cmake_default_flags"])
 
-
-def generate(env):
-    env.AddMethod(cmake_configure, "CMakeConfigure")
-    env.AddMethod(cmake_build, "CMakeBuild")
-    env.AddMethod(cmake_platform_flags, "CMakePlatformFlags")
-
-
-def cmake_configure(env, source, target, opt_args):
-    args = [
-        "-B",
-        target,
-    ]
-    if env["platform"] == "windows" and env["use_mingw"]:
-        args.extend(["-G", "Unix Makefiles"])
-    for arg in opt_args:
-        args.append(arg)
-    args.append(source)
-    return env.Execute("cmake " + " ".join(['"%s"' % a for a in args]))
-
-
-def cmake_build(env, source, target=""):
-    jobs = env.GetOption("num_jobs")
-    return env.Execute("cmake --build %s %s -j%s" % (source, "-t %s" % target if target else "", jobs))
-
-
-def cmake_platform_flags(env, config=None):
-    if config is None:
-        config = {}
+    config = {}
 
     if "CC" in env:
         config["CMAKE_C_COMPILER"] = env["CC"]
@@ -50,29 +28,46 @@ def cmake_platform_flags(env, config=None):
         config["CMAKE_SYSTEM_VERSION"] = api
         config["CMAKE_ANDROID_ARCH_ABI"] = abi
         config["ANDROID_ABI"] = abi
-        config["CMAKE_TOOLCHAIN_FILE"] = "%s/build/cmake/android.toolchain.cmake" % os.environ.get(
-            "ANDROID_NDK_ROOT", ""
+        config["CMAKE_TOOLCHAIN_FILE"] = "%s/build/cmake/android.toolchain.cmake" % env.get(
+            "ANDROID_NDK_ROOT", os.environ.get("ANDROID_NDK_ROOT", "")
         )
         config["CMAKE_ANDROID_STL_TYPE"] = "c++_static"
 
     elif env["platform"] == "linux":
-        march = "-m32" if env["arch"] == "x86_32" else "-m64"
-        config["CMAKE_C_FLAGS"] = march
-        config["CMAKE_CXX_FLAGS"] = march
+        linux_flags = {
+            "x86_64": "-m64",
+            "x86_32": "-m32",
+        }.get(env["arch"], "")
+        if linux_flags:
+            config["CMAKE_C_FLAGS"] = linux_flags
+            config["CMAKE_CXX_FLAGS"] = linux_flags
 
     elif env["platform"] == "macos":
         if env["arch"] == "universal":
-            raise ValueError("OSX architecture not supported: %s" % env["arch"])
-        config["CMAKE_OSX_ARCHITECTURES"] = env["arch"]
+            config["CMAKE_OSX_ARCHITECTURES"] = '"x86_64;arm64"'
+        else:
+            config["CMAKE_OSX_ARCHITECTURES"] = env["arch"]
         if env["macos_deployment_target"] != "default":
             config["CMAKE_OSX_DEPLOYMENT_TARGET"] = env["macos_deployment_target"]
+
+        if env["platform"] == "macos" and sys.platform != "darwin" and "OSXCROSS_ROOT" in os.environ:
+            config["CMAKE_AR"] = env["AR"]
+            config["CMAKE_RANLIB"] = env["RANLIB"]
+            if env["arch"] == "universal":
+                flags = "-arch x86_64 -arch arm64"
+            else:
+                flags = "-arch " + env["arch"]
+            if env["macos_deployment_target"] != "default":
+                flags += " -mmacosx-version-min=" + env["macos_deployment_target"]
+            config["CMAKE_C_FLAGS"] = flags
+            config["CMAKE_CXX_FLAGS"] = flags
 
     elif env["platform"] == "ios":
         if env["arch"] == "universal":
             raise ValueError("iOS architecture not supported: %s" % env["arch"])
         config["CMAKE_SYSTEM_NAME"] = "iOS"
         config["CMAKE_OSX_ARCHITECTURES"] = env["arch"]
-        if env["ios_min_version"] != "default":
+        if env.get("ios_min_version", "default") != "default":
             config["CMAKE_OSX_DEPLOYMENT_TARGET"] = env["ios_min_version"]
         if env["ios_simulator"]:
             config["CMAKE_OSX_SYSROOT"] = "iphonesimulator"
@@ -80,4 +75,48 @@ def cmake_platform_flags(env, config=None):
     elif env["platform"] == "windows":
         config["CMAKE_SYSTEM_NAME"] = "Windows"
 
-    return config
+    flags = ["-D%s=%s" % it for it in config.items()]
+    if env["CMAKEGENERATOR"]:
+        flags.extend(["-G", env["CMAKEGENERATOR"]])
+    elif env["platform"] == "windows":
+        if env.get("is_msvc", False):
+            flags.extend(["-G", "NMake Makefiles"])
+        elif sys.platform in ["win32", "msys", "cygwin"]:
+            flags.extend(["-G", "Ninja"])
+        else:
+            flags.extend(["-G", "Unix Makefiles"])
+    return flags
+
+
+def cmake_emitter(target, source, env):
+    return [str(target[0]) + "/CMakeCache.txt"] + target[1:], [str(source[0]) + "/CMakeLists.txt"] + source[1:]
+
+
+def cmake_generator(target, source, env, for_signature):
+    # Strip the -j option for signature to avoid rebuilding when num_jobs changes.
+    build = env["CMAKEBUILDCOM"].replace("-j$CMAKEBUILDJOBS", "") if for_signature else env["CMAKEBUILDCOM"]
+    return [
+        SCons.Action.Action("$CMAKECONFCOM", "$CMAKECONFCOMSTR"),
+        SCons.Action.Action(build, "$CMAKEBUILDCOMSTR"),
+    ]
+
+
+def options(opts):
+    opts.Add("cmake_default_flags", "Default CMake platform flags override, will be autodetected if not specified.", "")
+
+
+def exists(env):
+    return True
+
+
+def generate(env):
+    env["CMAKE"] = "cmake"
+    env["_cmake_default_flags"] = cmake_default_flags
+    env["CMAKEDEFAULTFLAGS"] = "${_cmake_default_flags(__env__)}"
+    env["CMAKEGENERATOR"] = ""
+    env["CMAKECONFFLAGS"] = SCons.Util.CLVar("")
+    env["CMAKECONFCOM"] = "$CMAKE -B ${TARGET.dir} $CMAKEDEFAULTFLAGS $CMAKECONFFLAGS ${SOURCE.dir}"
+    env["CMAKEBUILDJOBS"] = "${__env__.GetOption('num_jobs')}"
+    env["CMAKEBUILDFLAGS"] = SCons.Util.CLVar("")
+    env["CMAKEBUILDCOM"] = "$CMAKE --build ${TARGET.dir} $CMAKEBUILDFLAGS -j$CMAKEBUILDJOBS"
+    env["BUILDERS"]["CMake"] = SCons.Builder.Builder(generator=cmake_generator, emitter=cmake_emitter)
