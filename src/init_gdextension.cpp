@@ -46,10 +46,7 @@ Ref<ImageLoaderAVIF> loader;
 Ref<ResourceSaverAVIF> saver;
 
 void register_avif_extension_types(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		ResourceSaver::get_singleton()->add_resource_format_saver(saver);
-	}
-	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
@@ -58,16 +55,15 @@ void register_avif_extension_types(ModuleInitializationLevel p_level) {
 	loader.instantiate();
 	loader->add_format_loader();
 	saver.instantiate();
+	ResourceSaver::get_singleton()->add_resource_format_saver(saver);
 }
 
 void unregister_avif_extension_types(ModuleInitializationLevel p_level) {
-	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-		ResourceSaver::get_singleton()->remove_resource_format_saver(saver);
-	}
-	if (p_level != MODULE_INITIALIZATION_LEVEL_CORE) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
+	ResourceSaver::get_singleton()->remove_resource_format_saver(saver);
 	loader->remove_format_loader();
 	loader.unref();
 	saver.unref();
@@ -79,7 +75,7 @@ GDExtensionBool GDE_EXPORT avif_extension_init(const GDExtensionInterface *p_int
 
 	init_obj.register_initializer(register_avif_extension_types);
 	init_obj.register_terminator(unregister_avif_extension_types);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_CORE);
+	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
 
 	return init_obj.init();
 }
