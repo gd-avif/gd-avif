@@ -1,5 +1,5 @@
 /****************************************************************************/
-/*  image_loader_avif.h                                                     */
+/*  register_types.h                                                        */
 /****************************************************************************/
 /* Copyright (c) 2020-present Fabio Alessandrelli, Tim Erskine, Maffle LLC. */
 /*                                                                          */
@@ -23,32 +23,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   */
 /****************************************************************************/
 
-#ifndef IMAGE_LOADER_AVIF_H
-#define IMAGE_LOADER_AVIF_H
+#ifndef AVIF_REGISTER_TYPES_H
+#define AVIF_REGISTER_TYPES_H
 
-#include "godot_cpp/classes/file_access.hpp"
-#include "godot_cpp/classes/global_constants_binds.hpp"
-#include "godot_cpp/classes/image.hpp"
-#include "godot_cpp/classes/image_format_loader_extension.hpp"
-
-#include <avif/avif.h>
-
-class ImageLoaderAVIF : public godot::ImageFormatLoaderExtension {
-	GDCLASS(ImageLoaderAVIF, godot::ImageFormatLoaderExtension);
-
-protected:
-	static void _bind_methods();
-
-	static godot::Error avif_load_image_from_buffer(godot::Image *p_image, const uint8_t *p_buffer, int p_buffer_len, avifDecoder *p_decoder);
-	static godot::Ref<godot::Image> _avif_mem_loader_func(const uint8_t *p_buffer, int p_size);
-
-public:
-	virtual godot::Error _load_image(const godot::Ref<godot::Image> &p_image, const godot::Ref<godot::FileAccess> &p_file, godot::BitField<godot::ImageFormatLoader::LoaderFlags> p_flags, double p_scale) override;
-	virtual godot::PackedStringArray _get_recognized_extensions() const override;
-
-	static godot::Ref<godot::Image> load_avif_from_buffer(godot::PackedByteArray p_buffer);
-
-	ImageLoaderAVIF();
-};
-
+#ifdef GDEXTENSION
+#include <godot_cpp/classes/resource_saver.hpp>
+#include <godot_cpp/core/class_db.hpp>
+using namespace godot;
+#else
+#include "modules/register_module_types.h"
 #endif
+
+void initialize_avif_module(ModuleInitializationLevel p_level);
+void uninitialize_avif_module(ModuleInitializationLevel p_level);
+
+#endif // AVIF_REGISTER_TYPES_H

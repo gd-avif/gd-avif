@@ -31,7 +31,7 @@ def exists(env):
 
 def generate(env):
     env["AVIF_BUILD"] = env.Dir("#bin/thirdparty/libavif/${platform}/${arch}").abspath
-    env["AVIF_SOURCE"] = env.Dir("#thirdparty/libavif").abspath
+    env["AVIF_SOURCE"] = env.Dir("thirdparty/libavif").abspath
     env["AVIF_INCLUDE"] = env.Dir("${AVIF_SOURCE}/include").abspath
     env["AVIF_LIBS"] = [env.File("${AVIF_BUILD}/libavif.a")]
     env.AddMethod(build_library, "BuildLibAvif")

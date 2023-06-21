@@ -5,12 +5,6 @@ import os, sys, platform, json, subprocess
 import SCons
 
 
-def add_sources(sources, dirpath, extension):
-    for f in os.listdir(dirpath):
-        if f.endswith("." + extension):
-            sources.append(dirpath + "/" + f)
-
-
 # Minimum target platform versions.
 if "ios_min_version" not in ARGUMENTS:
     ARGUMENTS["ios_min_version"] = "11.0"
@@ -32,9 +26,12 @@ opts.Update(env)
 result_path = os.path.join("bin", "gdavif")
 
 # Our includes and sources
-env.Append(CPPPATH=["src/"])
-sources = []
-add_sources(sources, "src/", "cpp")
+env.Append(CPPDEFINES=["GDEXTENSION"])  # Tells our sources we are building a GDExtension, not a module.
+sources = [
+    "register_types.cpp",
+    "image_loader_avif.cpp",
+    "resource_saver_avif.cpp",
+]
 
 # Make our dependencies
 aom = env.BuildAOM()

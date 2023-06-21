@@ -27,10 +27,6 @@
 
 #include <string.h>
 
-#include "godot_cpp/classes/os.hpp"
-
-using namespace godot;
-
 Error ImageLoaderAVIF::avif_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p_buffer_len, avifDecoder *p_decoder) {
 	avifRGBImage rgb;
 	memset(&rgb, 0, sizeof(rgb));
@@ -68,11 +64,14 @@ Error ImageLoaderAVIF::avif_load_image_from_buffer(Image *p_image, const uint8_t
 }
 
 Ref<Image> ImageLoaderAVIF::load_avif_from_buffer(PackedByteArray p_buffer) {
-	ERR_FAIL_COND_V(_avif_mem_loader_func == NULL, Ref<Image>());
 	return _avif_mem_loader_func(p_buffer.ptr(), p_buffer.size());
 }
 
+#ifdef GDEXTENSION
 Error ImageLoaderAVIF::_load_image(const Ref<Image> &p_image, const Ref<FileAccess> &p_file, BitField<ImageFormatLoader::LoaderFlags> p_flags, double p_scale) {
+#else
+Error ImageLoaderAVIF::load_image(Ref<Image> p_image, Ref<FileAccess> p_file, BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale) {
+#endif
 	ERR_FAIL_COND_V(p_file.is_null() || !p_file->is_open(), ERR_INVALID_PARAMETER);
 
 	int src_image_len = p_file->get_length();
@@ -81,17 +80,23 @@ Error ImageLoaderAVIF::_load_image(const Ref<Image> &p_image, const Ref<FileAcce
 	PackedByteArray src_image = p_file->get_buffer(src_image_len);
 
 	avifDecoder *decoder = avifDecoderCreate();
-	godot::Error err = ImageLoaderAVIF::avif_load_image_from_buffer(const_cast<Image *>(p_image.ptr()), src_image.ptr(), src_image_len, decoder);
+	Error err = ImageLoaderAVIF::avif_load_image_from_buffer(const_cast<Image *>(p_image.ptr()), src_image.ptr(), src_image_len, decoder);
 	avifDecoderDestroy(decoder);
 
 	return err;
 }
 
+#ifdef GDEXTENSION
 PackedStringArray ImageLoaderAVIF::_get_recognized_extensions() const {
 	PackedStringArray psa;
 	psa.push_back("avif");
 	return psa;
 }
+#else
+void ImageLoaderAVIF::get_recognized_extensions(List<String> *r_extensions) const {
+	r_extensions->push_back("avif");
+}
+#endif
 
 Ref<Image> ImageLoaderAVIF::_avif_mem_loader_func(const uint8_t *p_buffer, int p_size) {
 	Ref<Image> img;

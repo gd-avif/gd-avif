@@ -1,5 +1,5 @@
 /****************************************************************************/
-/*  init_gdextension.cpp                                                    */
+/*  image_loader_avif.h                                                     */
 /****************************************************************************/
 /* Copyright (c) 2020-present Fabio Alessandrelli, Tim Erskine, Maffle LLC. */
 /*                                                                          */
@@ -23,59 +23,49 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                   */
 /****************************************************************************/
 
-#include <gdextension_interface.h>
+#ifndef IMAGE_LOADER_AVIF_H
+#define IMAGE_LOADER_AVIF_H
 
-#include "godot_cpp/classes/resource_saver.hpp"
-#include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/core/defs.hpp>
-#include <godot_cpp/godot.hpp>
+#ifdef GDEXTENSION
 
-#include "image_loader_avif.h"
-#include "resource_saver_avif.h"
-
-#ifdef _WIN32
-// See upstream godot-cpp GH-771.
-#undef GDN_EXPORT
-#define GDN_EXPORT __declspec(dllexport)
-#endif
+#include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/global_constants_binds.hpp>
+#include <godot_cpp/classes/image.hpp>
+#include <godot_cpp/classes/image_format_loader_extension.hpp>
 
 using namespace godot;
 
-Ref<ImageLoaderAVIF> loader;
-Ref<ResourceSaverAVIF> saver;
+#else // Module
 
-void register_avif_extension_types(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+#include "core/io/file_access.h"
+#include "core/io/image.h"
+#include "core/io/image_loader.h"
 
-	ClassDB::register_class<ResourceSaverAVIF>();
-	ClassDB::register_class<ImageLoaderAVIF>();
-	loader.instantiate();
-	loader->add_format_loader();
-	saver.instantiate();
-	ResourceSaver::get_singleton()->add_resource_format_saver(saver);
-}
+#endif
 
-void unregister_avif_extension_types(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
+#include <avif/avif.h>
 
-	ResourceSaver::get_singleton()->remove_resource_format_saver(saver);
-	loader->remove_format_loader();
-	loader.unref();
-	saver.unref();
-}
+class ImageLoaderAVIF : public ImageFormatLoaderExtension {
+	GDCLASS(ImageLoaderAVIF, ImageFormatLoaderExtension);
 
-extern "C" {
-GDExtensionBool GDE_EXPORT avif_extension_init(const GDExtensionInterface *p_interface, const GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
-	GDExtensionBinding::InitObject init_obj(p_interface, p_library, r_initialization);
+protected:
+	static void _bind_methods();
 
-	init_obj.register_initializer(register_avif_extension_types);
-	init_obj.register_terminator(unregister_avif_extension_types);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
+	static Error avif_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p_buffer_len, avifDecoder *p_decoder);
+	static Ref<Image> _avif_mem_loader_func(const uint8_t *p_buffer, int p_size);
 
-	return init_obj.init();
-}
-}
+public:
+#ifdef GDEXTENSION
+	virtual Error _load_image(const Ref<Image> &p_image, const Ref<FileAccess> &p_file, BitField<ImageFormatLoader::LoaderFlags> p_flags, double p_scale) override;
+	virtual PackedStringArray _get_recognized_extensions() const override;
+#else
+	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> p_file, BitField<ImageFormatLoader::LoaderFlags> p_flags, float p_scale) override;
+	virtual void get_recognized_extensions(List<String> *r_extension) const override;
+#endif
+
+	static Ref<Image> load_avif_from_buffer(PackedByteArray p_buffer);
+
+	ImageLoaderAVIF();
+};
+
+#endif

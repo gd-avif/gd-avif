@@ -25,13 +25,22 @@
 
 #include "resource_saver_avif.h"
 
-#include "godot_cpp/classes/file_access.hpp"
-#include "godot_cpp/classes/image.hpp"
-#include "godot_cpp/classes/image_texture.hpp"
-#include "godot_cpp/classes/texture.hpp"
-#include "godot_cpp/templates/vector.hpp"
+#ifdef GDEXTENSION
 
-using namespace godot;
+#include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/image.hpp>
+#include <godot_cpp/classes/image_texture.hpp>
+#include <godot_cpp/classes/texture.hpp>
+#include <godot_cpp/templates/vector.hpp>
+
+#else
+
+#include "core/io/file_access.h"
+#include "core/io/image.h"
+#include "core/templates/vector.h"
+#include "scene/resources/texture.h"
+
+#endif
 
 ResourceSaverAVIF *ResourceSaverAVIF::singleton = nullptr;
 
@@ -171,6 +180,7 @@ bool ResourceSaverAVIF::_recognize(const Ref<Resource> &p_resource) const {
 	return (p_resource.is_valid() && p_resource->is_class("ImageTexture"));
 }
 
+#ifdef GDEXTENSION
 PackedStringArray ResourceSaverAVIF::_get_recognized_extensions(const Ref<Resource> &p_resource) const {
 	PackedStringArray psa;
 	if (p_resource.is_valid() && p_resource->is_class("ImageTexture")) {
@@ -178,6 +188,13 @@ PackedStringArray ResourceSaverAVIF::_get_recognized_extensions(const Ref<Resour
 	}
 	return psa;
 }
+#else
+void ResourceSaverAVIF::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *r_extensions) const {
+	if (p_resource.is_valid() && p_resource->is_class("ImageTexture")) {
+		r_extensions->push_back("avif");
+	}
+}
+#endif
 
 Error ResourceSaverAVIF::save_avif(Ref<Image> p_image, const String &p_path, const Dictionary &p_options, PixelFormat p_format) {
 	ERR_FAIL_COND_V(!singleton, ERR_UNCONFIGURED);
@@ -226,12 +243,12 @@ void ResourceSaverAVIF::reset_avif_options_and_format() {
 }
 
 void ResourceSaverAVIF::_bind_methods() {
-	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("set_avif_options_and_format", "options", "format"), &ResourceSaverAVIF::set_avif_options_and_format, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("set_avif_options_and_format", "options", "format"), &ResourceSaverAVIF::set_avif_options_and_format, DEFVAL(Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
 	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("reset_avif_options_and_format"), &ResourceSaverAVIF::reset_avif_options_and_format);
 	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("get_avif_encoder_options"), &ResourceSaverAVIF::get_avif_encoder_options);
 	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("get_avif_pixel_format"), &ResourceSaverAVIF::get_avif_pixel_format);
-	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("save_avif", "image", "path", "options", "format"), &ResourceSaverAVIF::save_avif, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
-	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("save_avif_to_buffer", "image", "options", "format"), &ResourceSaverAVIF::save_avif_to_buffer, DEFVAL(godot::Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("save_avif", "image", "path", "options", "format"), &ResourceSaverAVIF::save_avif, DEFVAL(Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
+	ClassDB::bind_static_method("ResourceSaverAVIF", D_METHOD("save_avif_to_buffer", "image", "options", "format"), &ResourceSaverAVIF::save_avif_to_buffer, DEFVAL(Dictionary()), DEFVAL(AVIF_PIXEL_YUV422));
 
 	BIND_ENUM_CONSTANT(AVIF_PIXEL_DEFAULT);
 	BIND_ENUM_CONSTANT(AVIF_PIXEL_YUV444);

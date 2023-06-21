@@ -79,8 +79,8 @@ def exists(env):
 
 
 def generate(env):
-    env["AOM_SOURCE"] = env.Dir("#thirdparty/aom").abspath
     env["AOM_BUILD"] = env.Dir("#bin/thirdparty/aom/${platform}/${arch}").abspath
+    env["AOM_SOURCE"] = env.Dir("thirdparty/aom").abspath
     env["AOM_INCLUDE"] = env["AOM_SOURCE"]
     libs = []
     if env["arch"] == "x86_64" or (env["platform"] == "macos" and env["arch"] == "universal"):
