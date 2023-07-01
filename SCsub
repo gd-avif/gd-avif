@@ -1,0 +1,31 @@
+#!python
+
+Import("env")
+Import("env_modules")
+
+env_avif = env_modules.Clone()
+
+# Minimum target platform versions.
+if "ios_min_version" not in env_avif:
+    env_avif["ios_min_version"] = "11.0"
+if "macos_deployment_target" not in env_avif:
+    env_avif["macos_deployment_target"] = "11.0"
+if "android_api_level" not in env_avif:
+    env_avif["android_api_level"] = "21"
+
+# Dependencies
+for tool in ["cmake", "aom", "avif"]:
+    env_avif.Tool(tool, toolpath=["tools"])
+
+# Make our dependencies
+aom = env_avif.BuildAOM()
+avif = env_avif.BuildLibAvif(aom)
+
+module_obj = []
+env_avif.add_source_files(module_obj, "*.cpp")
+
+env.modules_sources += module_obj
+env.Append(LIBS=env_avif["AVIF_LIBS"] + env_avif["AOM_LIBS"])
+
+# Needed to force rebuilding the module files when the thirdparty library is updated.
+env.Depends(module_obj, aom + avif)

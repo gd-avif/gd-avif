@@ -1,6 +1,7 @@
 bin/*
 *.os
 *.a
+*.o
 *.lib
 .sconsign.dblite
 *.obj
