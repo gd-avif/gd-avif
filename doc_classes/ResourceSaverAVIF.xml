@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ResourceSaverAVIF" inherits="ResourceFormatSaver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		AVIF image format encoding and saving.
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_avif_encoder_options" qualifiers="static">
+			<return type="Dictionary" />
+			<description>
+				Returns the currently set encoder options.
+			</description>
+		</method>
+		<method name="get_avif_pixel_format" qualifiers="static">
+			<return type="int" enum="ResourceSaverAVIF.PixelFormat" />
+			<description>
+				Returns the currently set [enum PixelFormat].
+			</description>
+		</method>
+		<method name="reset_avif_options_and_format" qualifiers="static">
+			<return type="void" />
+			<description>
+				Resets the encoder options and [enum PixelFormat] to their original, factory settings.
+			</description>
+		</method>
+		<method name="save_avif" qualifiers="static">
+			<return type="int" enum="Error" />
+			<param index="0" name="image" type="Image" />
+			<param index="1" name="path" type="String" />
+			<param index="2" name="options" type="Dictionary" default="{}" />
+			<param index="3" name="format" type="int" enum="ResourceSaverAVIF.PixelFormat" default="2" />
+			<description>
+				Saves an [Image] to an AVIF file using the currently set encoder options and [enum PixelFormat], or via the optional parameters [param options] and [param format].
+			</description>
+		</method>
+		<method name="save_avif_to_buffer" qualifiers="static">
+			<return type="PackedByteArray" />
+			<param index="0" name="image" type="Image" />
+			<param index="1" name="options" type="Dictionary" default="{}" />
+			<param index="2" name="format" type="int" enum="ResourceSaverAVIF.PixelFormat" default="2" />
+			<description>
+				Saves an [Image] to a [PackedByteArray] using the currently set encoder options and [enum PixelFormat], or via the optional parameters [param options] and [param format].
+				The saved [PackedByteArray] can be reloaded as an [Image] using [method ImageLoaderAVIF.load_avif_from_buffer].
+			</description>
+		</method>
+		<method name="set_avif_options_and_format" qualifiers="static">
+			<return type="void" />
+			<param index="0" name="options" type="Dictionary" default="{}" />
+			<param index="1" name="format" type="int" enum="ResourceSaverAVIF.PixelFormat" default="2" />
+			<description>
+				Sets the active encoder options and [enum PixelFormat]. Any number of option keys can be included in the [param options] argument. Any omitted keys will remain set at their current values.
+				Passing an invalid key will generate an error.
+				[b]NOTE:[/b] Use [method get_avif_encoder_options] to obtain a [Dictionary] with all of the possible valid option keys.
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="AVIF_PIXEL_DEFAULT" value="0" enum="PixelFormat">
+		</constant>
+		<constant name="AVIF_PIXEL_YUV444" value="1" enum="PixelFormat">
+		</constant>
+		<constant name="AVIF_PIXEL_YUV422" value="2" enum="PixelFormat">
+		</constant>
+		<constant name="AVIF_PIXEL_YUV420" value="3" enum="PixelFormat">
+		</constant>
+		<constant name="AVIF_PIXEL_YUV400" value="4" enum="PixelFormat">
+		</constant>
+	</constants>
+</class>

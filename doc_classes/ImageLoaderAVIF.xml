@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ImageLoaderAVIF" inherits="ImageFormatLoaderExtension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		AVIF image format loading.
+	</brief_description>
+	<description>
+		[b]NOTE:[/b] To load an AVIF [Image] from a file, simply use [code]load("res://my_image_file.avif")[/code].
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="load_avif_from_buffer" qualifiers="static">
+			<return type="Image" />
+			<param index="0" name="avif_data" type="PackedByteArray" />
+			<description>
+				Loads and returns an [Image] from a [PackedByteArray]. The [PackedByteArray] can be created using [method ResourceSaverAVIF.save_avif_to_buffer].
+			</description>
+		</method>
+	</methods>
+</class>
