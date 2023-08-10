@@ -38,6 +38,7 @@
 #include "core/io/file_access.h"
 #include "core/io/image.h"
 #include "core/templates/vector.h"
+#include "scene/resources/image_texture.h"
 #include "scene/resources/texture.h"
 
 #endif
